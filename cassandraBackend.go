@@ -1,50 +1,50 @@
 package httpauth
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gocql/gocql"
 )
 
 type CassandraAuthBackend struct {
-	cluster  string
-	keyspace string
-  session *gocql.Session
+	clusterURL string
+	keyspace   string
+	session    *gocql.Session
 }
 
-func (b CassandraAuthBackend) connect() *gocql.CollectionType {
-	session := b.session.Copy()
-	return session.DB(b.keyspace).C("goauth")
-}
+//func (b CassandraAuthBackend) connect() *gocql.CollectionType {
+//session := b.session.
+//return session.DB(b.keyspace).C("goauth")
+//}
 
-//     backend = httpauth.CassandraAuthBackend("mongodb://127.0.0.1/", "auth")
-//     defer backend.Close()
-func NewCassandraBackend(cluster string, keyspace string) (b CassandraAuthBackend, e error) {
-	// Set up connection to database
-	b.cluster = cluster
-	b.keyspace = keyspace
-
-	cluster := gocql.NewCluster(b.cluster)
-	cluster.Keyspace = b.keyspace
-	b.session, err := cluster.CreateSession()
+func NewCassandraBackend(clusterURL string, keyspace string) (b CassandraAuthBackend, e error) {
+	cluster := gocql.NewCluster(clusterURL)
+	cluster.Keyspace = keyspace
+	session, err := cluster.CreateSession()
+	b.session = session
 	if err != nil {
 		log.Fatal(err)
 	}
-  return
+	return
 }
 
 // User returns the user with the given username. Error is set to
 // ErrMissingUser if user is not found.
 func (b CassandraAuthBackend) User(username string) (user UserData, e error) {
 	var result UserData
+	var firstname string
+	var age int
 
-	c := b.connect()
-	defer c.Database.Session.Close()
+	c := b.session
+	defer c.Close()
 
-	err := c.Find(bson.M{"Username": username}).One(&result)
-	if err != nil {
-		return result, ErrMissingUser
+	if err := c.Query("SELECT firstname, age FROM users WHERE lastname='Smith'").Scan(&firstname, &age); err != nil {
+		log.Fatal(err)
 	}
+
+	result.Username = firstname
+	fmt.Println(result.Username)
 	return result, nil
 }
 

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/apexskier/httpauth"
+import "github.com/rabem00/httpauth"
 
 var (
 	backend     httpauth.CassandraAuthBackend
@@ -13,6 +13,10 @@ var (
 func main() {
 	var err error
 
-	backend, err = httpauth.New
-
+	backend, err = httpauth.NewCassandraBackend("192.168.1.4", "demo")
+	if err != nil {
+		panic(err)
+	}
+	backend.User("Jones")
+	backend.Close()
 }
